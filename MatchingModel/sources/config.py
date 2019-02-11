@@ -5,8 +5,8 @@ PATH = '../resources/'
 ORIGINAL_DATA = '../resources/ViMs/original/'
 
 # PROCESSED CSV FILE FOR TRAIN
-IR_TRAIN = 'ir_train.csv'
+IR_TRAIN = 'train_ds.csv'
 
 
 # PROCESSED CSV FILE FOR TEST
-IR_TEST = 'ir_test.csv'
+IR_TEST = 'valid_ds.csv'

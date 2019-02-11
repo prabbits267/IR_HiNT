@@ -35,7 +35,7 @@ class ProcessData:
         content = text[8:]
         content = ' '.join(content)
         if content != '' and title != '' and cluster != '':
-            return content, title, cluster
+            return content, title
         return None
 
     def export_csv(self, pair_list, file_name):
