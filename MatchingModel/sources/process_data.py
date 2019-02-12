@@ -33,9 +33,10 @@ class ProcessData:
     def read_file(self, text, cluster):
         title = text[0].replace('Title: ', '')
         content = text[8:]
-        content = ' '.join(content)
-        if content != '' and title != '' and cluster != '':
-            return content, title
+        summ = text[6].replace('Summary: ', '')
+        content = ' '.join(content).replace('\n', ' ')
+        if content != '' and summ != '' and cluster != '':
+            return content, summ, cluster
         return None
 
     def export_csv(self, pair_list, file_name):
