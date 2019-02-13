@@ -15,19 +15,19 @@ class MyDataInterator:
 
         self.stop_words = self.get_stopwords()
 
-        self.SRC_TEXT = Field(sequential=True,
-                              tokenize=self.tokenizer,
-                              lower=True,
-                              preprocessing=Pipeline(self.post_process),
-                              stop_words=self.stop_words)
-        self.TRG_TEXT = Field(sequential=True,
-                              tokenize=self.tokenizer,
-                              lower=True,
-                              preprocessing=Pipeline(self.post_process),
-                              stop_words=self.stop_words)
+        self.DOC = Field(sequential=True,
+                         tokenize=self.tokenizer,
+                         lower=True,
+                         preprocessing=Pipeline(self.post_process),
+                         stop_words=self.stop_words)
+        self.QUE = Field(sequential=True,
+                         tokenize=self.tokenizer,
+                         lower=True,
+                         preprocessing=Pipeline(self.post_process),
+                         stop_words=self.stop_words)
 
-        self.data_fields = [("source", self.SRC_TEXT),
-                            ("summ", self.TRG_TEXT)]
+        self.data_fields = [("doc", self.DOC),
+                            ("que", self.QUE)]
 
         self.train, self.val = TabularDataset.splits(path=PATH,
                                                      train=IR_TRAIN,
@@ -35,8 +35,8 @@ class MyDataInterator:
                                                      format='csv',
                                                      fields=self.data_fields)
 
-        self.SRC_TEXT.build_vocab(self.train)
-        self.TRG_TEXT.build_vocab(self.train)
+        self.DOC.build_vocab(self.train)
+        self.QUE.build_vocab(self.train)
 
         self.train_iter, self.test_iter = BucketIterator.splits(datasets=(self.train, self.val),
                                          batch_size=self.batch_size,
@@ -45,7 +45,7 @@ class MyDataInterator:
                                          shuffle=True,
                                          repeat=False)
 
-        self.src_vocab_len = self.SRC_TEXT.vocab.__len__()
+        self.src_vocab_len = self.DOC.vocab.__len__()
 
     def tokenizer(self, sent):
         # sent = tokenize(sent)
@@ -53,13 +53,13 @@ class MyDataInterator:
 
     def word2token(self, word):
         try:
-            return self.SRC_TEXT.vocab.stoi[word]
+            return self.DOC.vocab.stoi[word]
         except KeyError:
-            return self.SRC_TEXT.void.stoi['<unk>']
+            return self.DOC.void.stoi['<unk>']
 
     def token2word(self, token):
         try:
-            return self.SRC_TEXT.vocab.itos[token]
+            return self.DOC.vocab.itos[token]
         except IndexError:
             return '<unk>'
 
@@ -82,7 +82,8 @@ def main():
         print(i.source.size())
 
 if __name__ == '__main__':
-    main()
+    pass
+    # main()
 
 
 
