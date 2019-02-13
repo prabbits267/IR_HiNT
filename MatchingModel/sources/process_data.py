@@ -36,7 +36,7 @@ class ProcessData:
         summ = text[6].replace('Summary: ', '')
         content = ' '.join(content).replace('\n', ' ')
         if content != '' and summ != '' and cluster != '':
-            return content, summ, cluster
+            return content, summ
         return None
 
     def export_csv(self, pair_list, file_name):
