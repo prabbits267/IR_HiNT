@@ -12,49 +12,41 @@ from MatchingModel.sources.data_loader import MyDataInterator
 
 
 class LocalMatching(nn.Module):
-    def __init__(self, embed_size, output_size=100, batch_size=1, para_size=100):
+    def __init__(self, in_size, vocab_len, out_size=100, para_size=100):
         """
-        :param embed_size: size of embedding vector
-        :param batch_size: size of batch
+        :param in_size: size of embedding vector
         :param para_size: size of paragraph
-        :param output_size: size of output vector from CNN
+        :param out_size: size of output vector from CNN
+        :param vocab_len: size of vocabulay
         """
         super(LocalMatching, self).__init__()
-        self.output_size = output_size
-        self.embed_size = embed_size
-        self.batch_size = batch_size
+        self.out_size = out_size
+        self.embed_size = in_size
         self.para_size = para_size
+        self.vocab_len = vocab_len
 
-        self.my_iterator = MyDataInterator(batch_size=batch_size)
-
-        self.vocab_len = self.my_iterator.src_vocab_len
-
-        self.embedded_layer = nn.Embedding(num_embeddings=self.vocab_len,
-                                           embedding_dim=embed_size,
+        self.embedded_layer = nn.Embedding(num_embeddings=vocab_len,
+                                           embedding_dim=in_size,
                                            padding_idx=1)
 
-        self.transform = nn.Linear(embed_size, 1)
+        self.transform = nn.Linear(in_size, 1)
 
-        cnn_out = int(output_size/2)
+        cnn_out = int(out_size / 2)
         self.conv1 = nn.Conv2d(3, cnn_out, kernel_size=3)
         self.conv2 = nn.Conv2d(50, 40, kernel_size=3)
         self.mp = nn.MaxPool2d(2)
-        self.fc = nn.Linear(1840, cnn_out)
+        self.fc = nn.Linear(5520, cnn_out)
 
     def convolute(self, input):
-        in_size = input.size(0)
         x = F.relu(self.mp(self.conv1(input.unsqueeze(0))))
         x = F.relu(self.mp(self.conv2(x)))
-        try:
-            x = x.view(in_size, -1)
-        except RuntimeError:
-            pass
+        x = x.view(-1)
         x = self.fc(x)
-        return F.log_softmax(x, dim=1)
+        return F.log_softmax(x, dim=0)
 
     def con_sig(self, S_xor, S_cos):
         return torch.cat((self.convolute(S_xor),
-                          self.convolute(S_cos)), 1)
+                          self.convolute(S_cos)), 0)
 
     def create_matrix(self, quer, doc):
         """
@@ -133,7 +125,7 @@ class LocalMatching(nn.Module):
 
         return M_xor, M_cos, S_xor, S_cos
 
-    def cal_score(self, quer, doc):
+    def forward(self, quer, doc):
         """
         :param quer: embededing of query
         :param doc:
@@ -142,20 +134,16 @@ class LocalMatching(nn.Module):
         _, _, Sxor_para, Scos_para = self.create_matrix(quer, doc)
 
         num_para = Sxor_para.size(0)
-        doc_sig = torch.Tensor(num_para, self.output_size)
+        doc_sig = torch.Tensor(num_para, self.out_size)
         for i in range(num_para):
-            doc_sig = self.con_sig(Sxor_para[i], Scos_para[i])
+            doc_sig[i] = self.con_sig(Sxor_para[i], Scos_para[i])
         return doc_sig
 
 def main():
-    hi = LocalMatching(100)
-    for i in hi.my_iterator.train_iter:
-        z = hi.cal_score(i.que, i.doc)
-
-
-
-
-    # print(z)
+    pass
+    # hi = LocalMatching(100)
+    # for i in hi.my_iterator.train_iter:
+    #     z = hi.cal_score(i.que, i.doc)
 
 
 if __name__ == '__main__':

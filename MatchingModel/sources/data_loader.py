@@ -7,7 +7,7 @@ from MatchingModel.sources.config import  *
 
 
 class MyDataInterator:
-    def __init__(self, batch_size):
+    def __init__(self, batch_size = 1):
         '''
         :param batch_size: batch_size
         '''
@@ -20,11 +20,13 @@ class MyDataInterator:
                          lower=True,
                          preprocessing=Pipeline(self.post_process),
                          stop_words=self.stop_words)
+
         self.QUE = Field(sequential=True,
                          tokenize=self.tokenizer,
                          lower=True,
                          preprocessing=Pipeline(self.post_process),
-                         stop_words=self.stop_words)
+                         stop_words=self.stop_words,
+                         fix_length=30)
 
         self.data_fields = [("doc", self.DOC),
                             ("que", self.QUE)]
@@ -74,16 +76,14 @@ class MyDataInterator:
         return regex.sub(' ', sent)
 
 
-
-
 def main():
     iterator = MyDataInterator(1)
     for i in iterator.train_iter:
-        print(i.source.size())
+        print(i.que.size())
 
 if __name__ == '__main__':
-    pass
-    # main()
+    # pass
+    main()
 
 
 
