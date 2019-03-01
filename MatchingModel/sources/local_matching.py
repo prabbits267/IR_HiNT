@@ -12,22 +12,23 @@ from MatchingModel.sources.data_loader import MyDataInterator
 
 
 class LocalMatching(nn.Module):
-    def __init__(self, in_size, vocab_len, out_size=100, para_size=100):
+    def __init__(self, in_size, vocab_size, out_size=100, para_size=100, query_size=40):
         """
         :param in_size: size of embedding vector
         :param para_size: size of paragraph
         :param out_size: size of output vector from CNN
         :param vocab_len: size of vocabulay
+        :param query_size: size of query
         """
+
         super(LocalMatching, self).__init__()
         self.out_size = out_size
         self.embed_size = in_size
         self.para_size = para_size
-        self.vocab_len = vocab_len
+        self.query_size = query_size
 
-        self.embedded_layer = nn.Embedding(num_embeddings=vocab_len,
-                                           embedding_dim=in_size,
-                                           padding_idx=1)
+        self.embedded_layer = nn.Embedding(num_embeddings=vocab_size,
+                                           embedding_dim=in_size)
 
         self.transform = nn.Linear(in_size, 1)
 
@@ -35,14 +36,14 @@ class LocalMatching(nn.Module):
         self.conv1 = nn.Conv2d(3, cnn_out, kernel_size=3)
         self.conv2 = nn.Conv2d(50, 40, kernel_size=3)
         self.mp = nn.MaxPool2d(2)
-        self.fc = nn.Linear(5520, cnn_out)
+        self.fc = nn.Linear(7360, cnn_out)
 
     def convolute(self, input):
         x = F.relu(self.mp(self.conv1(input.unsqueeze(0))))
         x = F.relu(self.mp(self.conv2(x)))
         x = x.view(-1)
         x = self.fc(x)
-        return F.log_softmax(x, dim=0)
+        return F.softmax(x, dim=0)
 
     def con_sig(self, S_xor, S_cos):
         return torch.cat((self.convolute(S_xor),
@@ -54,9 +55,12 @@ class LocalMatching(nn.Module):
         :param para: tensor with size (max_len_para)
         :return: list of cosine simmilarity, xor from quer and doc
         """
+        doc = doc.squeeze(0)
+        quer = quer.squeeze(0)
+
         len_query = quer.size(0)
         doc_size = doc.size(0)
-        num_para = math.ceil(doc_size/self.para_size)
+        num_para = math.ceil(doc_size / self.para_size)
 
         # split paragrah
         xor_matrix = torch.zeros(num_para, len_query, self.para_size)
@@ -73,7 +77,7 @@ class LocalMatching(nn.Module):
             end_ind = star_ind + self.para_size
             if end_ind > doc_size:
                 end_ind = doc_size
-            xor_matrix[i], cos_matrix[i], Sxor_para[i], Scos_para[i]\
+            xor_matrix[i], cos_matrix[i], Sxor_para[i], Scos_para[i] \
                 = self.xor_cos_matrix(quer, doc[star_ind:end_ind], query_embed,
                                       doc_embed[star_ind:end_ind])
 
@@ -91,20 +95,19 @@ class LocalMatching(nn.Module):
         para_len = para.size(0)
 
         if para_embed.size(0) < self.para_size:
-            para_emb = torch.zeros(self.para_size, self.batch_size, self.embed_size)
-            para_emb[:para_len] = para_embed
-            para_embed = para_emb
+            spartial_para = torch.zeros(self.para_size, self.embed_size)
+            spartial_para[:para_len] = para_embed
+            para_embed = spartial_para
 
         S_xor = torch.Tensor(3, query_len, self.para_size)
         S_cos = torch.Tensor(3, query_len, self.para_size)
 
         M_xor = torch.zeros(query_len, self.para_size)
-        M_cos = torch.from_numpy(cdist(que_embed.squeeze(1).detach().numpy(),
-                                       para_embed.squeeze(1).detach().numpy(),
-                                       metric='cosine'))
 
-        trans_x = self.transform(que_embed)[:, 0, 0]
-        trans_y = self.transform(para_embed)[:, 0, 0]
+        M_cos = self.cal_simmilarity(que_embed, para_embed)
+
+        trans_x = self.transform(que_embed).squeeze(1)
+        trans_y = self.transform(para_embed).squeeze(1)
 
         trans_x = torch.transpose(trans_x.repeat(self.para_size, 1), 0, 1)
         trans_y = trans_y.repeat(query_len, 1)
@@ -139,14 +142,17 @@ class LocalMatching(nn.Module):
             doc_sig[i] = self.con_sig(Sxor_para[i], Scos_para[i])
         return doc_sig
 
+    def cal_simmilarity(self, query_embed, doc_embed):
+        query_embed = query_embed / query_embed.norm(dim=1)[:, None]
+        doc_embed = doc_embed / doc_embed.norm(dim=1)[:, None]
+
+        res = torch.mm(query_embed, doc_embed.transpose(0, 1))
+        return res
+
+
 def main():
-    pass
-    # hi = LocalMatching(100)
-    # for i in hi.my_iterator.train_iter:
-    #     z = hi.cal_score(i.que, i.doc)
+    hi = LocalMatching(100)
 
 
 if __name__ == '__main__':
     main()
-
-

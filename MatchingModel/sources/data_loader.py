@@ -3,11 +3,11 @@ from os.path import join
 
 from pyvi.ViTokenizer import tokenize
 from torchtext.data import Field, BucketIterator, TabularDataset, Pipeline
-from MatchingModel.sources.config import  *
+from MatchingModel.sources.config import *
 
 
 class MyDataInterator:
-    def __init__(self, batch_size = 1):
+    def __init__(self, batch_size=1):
         '''
         :param batch_size: batch_size
         '''
@@ -19,14 +19,17 @@ class MyDataInterator:
                          tokenize=self.tokenizer,
                          lower=True,
                          preprocessing=Pipeline(self.post_process),
-                         stop_words=self.stop_words)
+                         stop_words=self.stop_words,
+                         batch_first=True,
+                         fix_length=500)
 
         self.QUE = Field(sequential=True,
                          tokenize=self.tokenizer,
                          lower=True,
                          preprocessing=Pipeline(self.post_process),
                          stop_words=self.stop_words,
-                         fix_length=30)
+                         fix_length=40,
+                         batch_first=True)
 
         self.data_fields = [("doc", self.DOC),
                             ("que", self.QUE)]
@@ -41,11 +44,11 @@ class MyDataInterator:
         self.QUE.build_vocab(self.train)
 
         self.train_iter, self.test_iter = BucketIterator.splits(datasets=(self.train, self.val),
-                                         batch_size=self.batch_size,
-                                         sort_key=lambda x: len(x.source),
-                                         sort_within_batch=False,
-                                         shuffle=True,
-                                         repeat=False)
+                                                                batch_size=self.batch_size,
+                                                                sort_key=lambda x: len(x.source),
+                                                                sort_within_batch=False,
+                                                                shuffle=True,
+                                                                repeat=False)
 
         self.src_vocab_len = self.DOC.vocab.__len__()
 
@@ -78,14 +81,11 @@ class MyDataInterator:
 
 def main():
     iterator = MyDataInterator(1)
-    for i in iterator.train_iter:
-        print(i.que.size())
+
+    next(iter(iterator.train_iter))
+    print()
+
 
 if __name__ == '__main__':
     # pass
     main()
-
-
-
-
-

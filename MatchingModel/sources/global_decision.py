@@ -1,11 +1,12 @@
 import torch
 from torch import nn
 
+
 class GlobalDecision(nn.Module):
-    def __init__(self, in_size, hid_size, glo_dec, n_layers=1):
+    def __init__(self, in_size, hid_size, out_size=100, glo_dec='hybrid', n_layers=1):
         """
         :param in_size: input size
-        :param glo_dec: type of global decision model
+        :param glo_dec: type of global decision model, default 'hybrid'
         :param hid_size: hidden size of LSTM
         :param n_layers number of layers
         """
@@ -19,6 +20,9 @@ class GlobalDecision(nn.Module):
                             hidden_size=hid_size,
                             num_layers=n_layers,
                             batch_first=True)
+
+        self.transform = nn.Linear(self.hid_size, out_size)
+
         if glo_dec not in ['independent', 'accumulate', 'hybrid']:
             raise Exception('The global decision layer is wrong')
         self.local_trans = nn.Linear(in_size, in_size)
@@ -43,9 +47,11 @@ class GlobalDecision(nn.Module):
     def cal_hybscore(self, local_sigs):
         local_sigs = torch.tanh(self.local_trans(local_sigs))
         lstm_out, hidden = self.lstm(local_sigs.unsqueeze(0))
-        concat_sigs = torch.cat((lstm_out.squeeze(0), local_sigs), dim=0)
+        lstm_sig = self.transform(lstm_out.squeeze(0))
+        concat_sigs = torch.cat((lstm_sig, local_sigs), dim=0)
         top_sigs = concat_sigs.topk(1, dim=0)[0]
         return self.out(top_sigs)
+
 
 def main():
     # in_size, hid_size, glo_dec, n_layers
@@ -54,16 +60,6 @@ def main():
     score = glo(sigs)
     print(score)
 
+
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
-
-
-
-
-
