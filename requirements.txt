@@ -125,7 +125,7 @@ urllib3==1.22
 usb-creator==0.3.0
 virtualenv==15.0.1
 w3lib==1.19.0
-Werkzeug==0.14.1
+Werkzeug==0.15.3
 wrapt==1.10.11
 xdiagnose==3.8.4.1
 xkit==0.0.0
