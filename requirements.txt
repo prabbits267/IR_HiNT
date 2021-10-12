@@ -49,7 +49,7 @@ murmurhash==1.0.1
 numpy==1.16.0
 oauthlib==1.0.3
 onboard==1.2.0
-opencv-python==3.4.0.12
+opencv-python==3.4.7.28
 padme==1.1.1
 parsel==1.5.0
 pexpect==4.0.1
