@@ -86,7 +86,7 @@ requests==2.18.4
 ruamel.yaml==0.15.44
 scikit-learn==0.20.2
 scipy==1.0.1
-Scrapy==1.5.1
+Scrapy==1.8.2
 service-identity==17.0.0
 sessioninstaller==0.0.0
 six==1.11.0
